@@ -132,6 +132,7 @@ Once the pop-up window allowed me to authorize my Backstage app, the message
 **Login failed, user profile does not contain an email** is returned to the application.
 
 According to [a user with the same issue](https://github.com/backstage/backstage/issues/23748#issuecomment-2016989411), the fix is to [make the email address of the GitHub profile public](https://github.com/settings/emails). To do so, uncheck the box beside **Keep my email addresses private**.
+After doing so, choose an email address for the **Primary email address** field and click **Save**.
 
 In summary, to resolve these errors, I had to:
 
