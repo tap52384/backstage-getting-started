@@ -140,3 +140,14 @@ In summary, to resolve these errors, I had to:
 - completely stop the website using Control + C in the terminal then starting the app again using `yarn dev`
 - In the Settings of my GitHub account, not only do you have to uncheck the box keeping your email address private,
 but you have to actually select the public email address
+
+### Attempting to sign-in, part 2: resolver error
+
+This error remains which leads me to believe that the OAuth authentication is working but mapping the
+GitHub user to the Backstage user is not just yet:
+
+```log
+Failed to sign-in, unable to resolve user identity
+```
+
+When I resume work on this project, the next step is to figure out how to specify the Backstage user.
