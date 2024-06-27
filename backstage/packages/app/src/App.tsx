@@ -52,6 +52,10 @@ const githubProvider: SignInProviderConfig = {
     message: 'Sign in using GitHub now!',
     apiRef: githubAuthApiRef
 };
+const providers = [
+    githubProvider
+]
+
 
 const app = createApp({
   apis,
@@ -75,7 +79,8 @@ const app = createApp({
   components: {
     // SignInPage: props => <SignInPage {...props} auto providers={['guest']} />,
     // I wish I could support both guest and github, but that's for another day.
-    SignInPage: props => <SignInPage {...props} auto provider={githubProvider} />,
+    // SignInPage: props => <SignInPage {...props} auto provider={githubProvider} />,
+    SignInPage: props => <SignInPage {...props} auto providers={['guest', ...providers]} />,
   },
 });
 

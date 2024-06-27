@@ -151,4 +151,37 @@ GitHub user to the Backstage user is not just yet:
 Failed to sign-in, unable to resolve user identity
 ```
 
-When I resume work on this project, the next step is to figure out how to specify the Backstage user.
+The setup directions create a `guest` user. I found [a YouTube video](https://youtu.be/VCMoLchQRL8?t=1926)
+showing how multiple providers can be specified at the same time and made a similar change in the
+file `packages/app/src/App.tsx` to allow logging in as **guest** and via GitHub. Logging in as `guest`
+takes to the `catalog` where you can find different types of objects like API, Component, Group, etc.
+We are interested in type `User`.
+
+You can add a new user by editing `examples.org.yaml` using [the example from the documentation](https://youtu.be/VCMoLchQRL8?t=1926).
+For the purposes of authenticating with GitHub, I added an email address to the new user to resolve:
+
+```yaml
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: tap52384
+spec:
+  profile:
+    displayName: Patrick Lewis
+    email: tap52384@gmail.com
+    picture: https://avatars.githubusercontent.com/u/647983?v=4
+  memberOf: [guests]
+```
+
+To have the changes to the guest user reflected in the site, I had to use **Control + C** to stop
+the app entirely. I also went to [the GitHub OAuth app](https://github.com/settings/developers) and
+revoked the login token (kept the client secret) so that the app could login again.
+
+If you need to log out of the scaffolding test Backstage app, you have two options on the **Settings** page:
+
+- On the **General** tab, in the **Profile** section, click the three dots and click **Sign Out**
+- On the **Authentication Providers** tab, in the **Available Providers** section, click **Sign Out**
+
+You can also sign in again from the **Authentication Providers** tab.

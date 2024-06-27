@@ -15,3 +15,15 @@ metadata:
 spec:
   type: team
   children: []
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-user
+apiVersion: backstage.io/v1alpha1
+kind: User
+metadata:
+  name: tap52384
+spec:
+  profile:
+    displayName: Patrick Lewis
+    email: tap52384@gmail.com
+    picture: https://avatars.githubusercontent.com/u/647983?v=4
+  memberOf: [guests]
