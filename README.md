@@ -1,8 +1,13 @@
 # backstage-getting-started
 
-https://backstage.io/docs/getting-started/
+<https://backstage.io/docs/getting-started/>
 
-## Notes
+## Getting Started / Authentication via GitHub
+
+### References - Getting Started / Authentication via GitHub
+
+- [backstage.io - Getting Started](https://backstage.io/docs/getting-started/)
+- [backstage.io - Authentication](https://backstage.io/docs/getting-started/config/authentication/)
 
 ### Installing the app
 
@@ -14,19 +19,20 @@ npx @backstage/create-app@latest
 
 This command requires node version **18** or **20** when attempting to install
 **yarn** (which I already had installed). I used the following command to install
-node 20 via nvm:
+node 18 via nvm:
 
 ```bash
 # Install the latest supported version of node for @backstage
-nvm install 20
+nvm install 18
 # Install yarn specifically for this version of node
 npm install --global yarn
 yarn --version
-# remove the directory created by the npx command
-rm -rf backstage
+yarn install
+# remove the directory created by the npx command (only if something's wrong)
+# rm -rf backstage
 ```
 
-Using node 20 worked better as there is a module that is deprecated in node 22.
+Using node 18  worked better as there is a module that is deprecated in node 22.
 This message appeared every time I started the `npx` command with node 22:
 
 ```bash
@@ -45,7 +51,6 @@ On macOS, the terminal (iTerm2) requested access to execute AppleScript.
 ```bash
 zplewis@Zs-MacBook-Air backstage-getting-started % cd backstage
 zplewis@Zs-MacBook-Air backstage % yarn dev
-yarn run v1.22.22
 ```
 
 ### GitHub
@@ -59,6 +64,12 @@ documentation specifically about [the GitHub Authentication Provider](https://ba
 Once you create the GitHub OAuth app, they provide the `Client ID` but you have to
 generate a `client secret` for that client ID. You will need both for configuring this
 Backstage application (`app-config.yaml`).
+
+> It is required (unless you can make environment variables work) to use `app-config.local.yaml`
+> to include the client ID and secret from GitHub for authentication to work properly. Otherwise,
+> the sensitive values would have to be included in files that are committed (like app-config.yaml).
+> Without the GitHub client ID and secret, the popup that appears when attempting to sign in via
+> GitHub and authorize our Backstage app with our GitHub OAuth app will fail.
 
 The documentation on the GitHub provider mentions a resolver which seems to
 determine how to match the GitHub user to the Backstage user and they offer
@@ -157,7 +168,7 @@ file `packages/app/src/App.tsx` to allow logging in as **guest** and via GitHub.
 takes to the `catalog` where you can find different types of objects like API, Component, Group, etc.
 We are interested in type `User`.
 
-You can add a new user by editing `examples.org.yaml` using [the example from the documentation](https://youtu.be/VCMoLchQRL8?t=1926).
+You can add a new user by editing `examples/org.yaml` using [the example from the documentation](https://youtu.be/VCMoLchQRL8?t=1926).
 For the purposes of authenticating with GitHub, I added an email address to the new user to resolve:
 
 ```yaml
@@ -185,3 +196,94 @@ If you need to log out of the scaffolding test Backstage app, you have two optio
 - On the **Authentication Providers** tab, in the **Available Providers** section, click **Sign Out**
 
 You can also sign in again from the **Authentication Providers** tab.
+
+If done correctly, signing in via GitHub should work even if you login first as guest and then via GitHub.
+
+## Building a Docker image
+
+### References - Building a Docker image
+
+- [backstage.io - Building a Docker image](https://backstage.io/docs/deployment/docker/)
+
+### Host Build
+
+Running the following command prevents the `yarn.lock` file from being updated when you run
+`yarn install`. This makes sense to me as that is how `composer` for PHP works. Updates only occur
+when requested via `composer update`.
+
+The directions say that "tsc outputs type definitions to dist-types/ in the repo root", but that is
+not true. The command `yarn tsc` only works when run inside the Backstage app folder created by using
+the `@backstage/create-app` command. Therefore, the `dist-types` folder is created within that folder
+and not necessarily within the root of the repository.
+
+```bash
+# Make sure you are inside the Backstage app folder
+# In the Dockerfile, this may be referred to as /app
+# All of the following commands are executed from the root of the Backstage app folder.
+cd backstage
+
+# Make sure you are using the correct version of node
+# Based on the Dockerfile included with this app, using version 18.20.3 is the best version
+# https://github.com/nodejs/docker-node/blob/main/18/bookworm-slim/Dockerfile
+nvm install 18.20.3
+nvm use 18.20.3
+
+# Installs packages specified in package.json without updating them
+yarn install --frozen-lockfile
+
+# tsc compiles the project defined in tsconfig.json, which also proves that this
+# command must be run from within the Backstage app folder
+# https://www.typescriptlang.org/docs/handbook/compiler-options.html
+# "tsc" stands for "typescript compile, maybe?"; yes: tsc: The TypeScript Compiler
+# tsc - compiles the current project (tsconfig.json in the working directory)
+yarn tsc
+
+# From the Dockerfile, these commands seem to successfully build the image
+# You can see how these commands actually work by viewing package.json
+# Build the backend, which bundles it all up into the packages/backend/dist folder.
+# The configuration files here should match the one you use inside the Dockerfile below.
+yarn build:backend
+
+# The Dockerfile for the "Host Build" step is found here:
+# backstage/packages/backend/Dockerfile
+# However, we are executing it from the root of the backstage app for the build context (files
+# included when the image is built)
+# This creates an image called "backstage"
+yarn build-image
+
+# To create a container from the "backstage" image and run it
+yarn build-image && docker run -it -p 7007:7007 backstage
+docker run -it -p 7007:7007 --env-file .env.yarn backstage
+```
+
+When starting the container, there is a failure to connect to the database. Based
+on the port number in the error message and `app-config.production.yaml`, it appears
+that this image is attempting to connect to a PostgresSQL database:
+
+```log
+/app/node_modules/@backstage/backend-defaults/dist/database.cjs.js:454
+        throw new Error(
+              ^
+
+Error: Failed to connect to the database to make sure that 'backstage_plugin_app' exists, Error: connect ECONNREFUSED 127.0.0.1:5432
+    at PgConnector.getClient (/app/node_modules/@backstage/backend-defaults/dist/database.cjs.js:454:15)
+    at runNextTicks (node:internal/process/task_queues:60:5)
+    at listOnTimeout (node:internal/timers:538:9)
+    at process.processTimers (node:internal/timers:512:7)
+```
+
+For purposes of this test, use the same `database` config from `app-config.yaml` for `app-config.production.yaml`
+if you do not have a database available to connect to.
+
+The `guest` auth provider is not allowed in a production environment, so you may have to remove it.
+Since we took the time to get the GitHub provider working first, this should work.
+
+One more note: any time that you change one of the `app-config.*.yaml` files, you have to run the
+command `yarn build-image` again since the code is part of the image.
+
+Based on the Dockerfile used for the **Host Build** step, two config.yaml files are used:
+
+- app-config.yaml
+- app-config.production.yaml
+
+I had to comment out the `guest` auth provider from both config files.

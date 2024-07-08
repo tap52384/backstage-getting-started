@@ -9,9 +9,26 @@ backend:
   # Used for enabling authentication, secret is shared by all backend plugins
   # See https://backstage.io/docs/auth/service-to-service-auth for
   # information on the format
-  # auth:
-  #   keys:
-  #     - secret: ${BACKEND_SECRET}
+  auth:
+    environment: development
+    providers:
+      # The guest provider cannot be used outside of a development environment
+      guest: {}
+      github:
+        development:
+          clientId: ${GITHUB_CLIENT_ID}
+          clientSecret: ${GITHUB_CLIENT_SECRET}
+          callbackUrl: http://localhost:7007/api/auth/github/handler/frame
+          signIn:
+            resolvers:
+              # Matches the GitHub username with the user entity name
+              # See https://backstage.io/docs/auth/github/provider#resolvers for more resolvers.
+              - resolver: emailMatchingUserEntityProfileEmail
+              - resolver: usernameMatchingUserEntityName
+              # Two additional resolvers to try although they may not be needed?
+              # Resolvers map the GitHub username to the Backstage username
+              - resolver: emailLocalPartMatchingUserEntityName
+
   baseUrl: http://localhost:7007
   listen:
     port: 7007
